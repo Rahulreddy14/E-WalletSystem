@@ -1,0 +1,10 @@
+# ignore node modules
+node_modules/
+# Ignore Build output
+build/
+# Ignore Environment Variables
+.env
+#Ignore Log Files
+npm-debug.log
+#Ignore Mac OS system files 
+.DS_Store
