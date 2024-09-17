@@ -6,6 +6,7 @@ const userSchema = mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   balance: { type: Number, default: 0 },
+  isAdmin: { type: Boolean, default: false }, // Admin field
 });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {

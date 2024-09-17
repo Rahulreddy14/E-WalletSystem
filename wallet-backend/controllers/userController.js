@@ -1,5 +1,7 @@
 const { findUserByEmail, registerUser, validatePassword, findUserById } = require('../services/userService');
 const generateToken = require('../utils/generateToken');
+const User = require('../models/userModel');
+
 
 // Register a new user
 const registerUserController = async (req, res) => {
@@ -50,4 +52,27 @@ const getUserProfileController = async (req, res) => {
   }
 };
 
-module.exports = { registerUserController, loginUserController, getUserProfileController };
+// Admin: Get all users
+const getAllUsers = async (req, res) => {
+    try {
+      const users = await User.find({});
+      res.status(200).json(users);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch users', error });
+    }
+  };
+  
+  // Admin: Get user by ID
+  const getUserById = async (req, res) => {
+    try {
+      const user = await User.findById(req.params.id).select('-password'); // Exclude password
+      if (user) {
+        res.status(200).json(user);
+      } else {
+        res.status(404).json({ message: 'User not found' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch user', error });
+    }
+  };
+module.exports = { registerUserController, loginUserController, getUserProfileController,getAllUsers, getUserById  };
