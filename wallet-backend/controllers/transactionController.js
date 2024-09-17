@@ -1,14 +1,12 @@
-const Transaction = require('../models/transactionModel');
+const { createTransaction, getTransactionHistory } = require('../services/transactionService');
 const User = require('../models/userModel');
 const sendNotification = require('../services/notificationService');
 
-
-// Create a new transaction (peer-to-peer transfer)
-const createTransaction = async (req, res) => {
+// Create a new transaction
+const createTransactionController = async (req, res) => {
   const { recipientId, amount, description } = req.body;
 
   try {
-    // Check if both users (sender and recipient) exist
     const sender = req.user;
     const recipient = await User.findById(recipientId);
 
@@ -16,32 +14,19 @@ const createTransaction = async (req, res) => {
       return res.status(404).json({ message: 'Recipient not found' });
     }
 
-    // Ensure sender has enough balance
     if (sender.balance < amount) {
       return res.status(400).json({ message: 'Insufficient funds' });
     }
 
-    // Create and save the transaction
-    const transaction = await Transaction.create({
-      sender: sender._id,
-      recipient: recipient._id,
+    const transaction = await createTransaction(sender, recipient, amount, description);
+
+    // Send notification
+    sendNotification({
+      sender: sender.email,
+      recipient: recipient.email,
       amount,
       description,
     });
-
-    // Update balances of sender and recipient
-    sender.balance -= amount;
-    recipient.balance += amount;
-
-    await sender.save();
-    await recipient.save();
-
-    sendNotification({
-        sender: sender.email,
-        recipient: recipient.email,
-        amount,
-        description,
-      });
 
     res.status(201).json({
       message: 'Transaction successful',
@@ -52,20 +37,14 @@ const createTransaction = async (req, res) => {
   }
 };
 
-// Get transaction history for the authenticated user
-const getTransactionHistory = async (req, res) => {
+// Get transaction history
+const getTransactionHistoryController = async (req, res) => {
   try {
-    const transactions = await Transaction.find({
-      $or: [{ sender: req.user._id }, { recipient: req.user._id }],
-    }).sort({ createdAt: -1 }); // Get transactions involving the user
-
+    const transactions = await getTransactionHistory(req.user._id);
     res.status(200).json(transactions);
   } catch (error) {
     res.status(500).json({ message: 'Failed to retrieve transaction history', error });
   }
 };
 
-module.exports = {
-  createTransaction,
-  getTransactionHistory,
-};
+module.exports = { createTransactionController, getTransactionHistoryController };

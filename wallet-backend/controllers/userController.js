@@ -1,20 +1,16 @@
-const User = require('../models/userModel');
+const { findUserByEmail, registerUser, validatePassword, findUserById } = require('../services/userService');
 const generateToken = require('../utils/generateToken');
 
-const registerUser = async (req, res) => {
+// Register a new user
+const registerUserController = async (req, res) => {
   const { name, email, password } = req.body;
 
-  const userExists = await User.findOne({ email });
+  const userExists = await findUserByEmail(email);
   if (userExists) {
     return res.status(400).json({ message: 'User already exists' });
   }
 
-  const user = await User.create({
-    name,
-    email,
-    password: await bcrypt.hash(password, 10),
-  });
-
+  const user = await registerUser({ name, email, password });
   if (user) {
     res.status(201).json({
       _id: user._id,
@@ -27,12 +23,12 @@ const registerUser = async (req, res) => {
   }
 };
 
-const loginUser = async (req, res) => {
+// User login
+const loginUserController = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
-
-  if (user && (await user.matchPassword(password))) {
+  const user = await findUserByEmail(email);
+  if (user && (await validatePassword(password, user.password))) {
     res.json({
       _id: user._id,
       name: user.name,
@@ -44,18 +40,14 @@ const loginUser = async (req, res) => {
   }
 };
 
-const getUserProfile = async (req, res) => {
-  const user = await User.findById(req.user._id);
+// Get user profile
+const getUserProfileController = async (req, res) => {
+  const user = await findUserById(req.user._id);
   if (user) {
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      balance: user.balance,
-    });
+    res.json(user);
   } else {
     res.status(404).json({ message: 'User not found' });
   }
 };
 
-module.exports = { registerUser, loginUser, getUserProfile };
+module.exports = { registerUserController, loginUserController, getUserProfileController };
