@@ -1,5 +1,7 @@
 const Transaction = require('../models/transactionModel');
 const User = require('../models/userModel');
+const sendNotification = require('../services/notificationService');
+
 
 // Create a new transaction (peer-to-peer transfer)
 const createTransaction = async (req, res) => {
@@ -33,6 +35,13 @@ const createTransaction = async (req, res) => {
 
     await sender.save();
     await recipient.save();
+
+    sendNotification({
+        sender: sender.email,
+        recipient: recipient.email,
+        amount,
+        description,
+      });
 
     res.status(201).json({
       message: 'Transaction successful',
